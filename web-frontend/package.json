@@ -8,13 +8,15 @@
     "@emotion/styled": "latest",
     "@mui/icons-material": "^5.3.1",
     "@mui/material": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
+    "moment": "^2.29.1",
+    "prop-types": "^15.8.1",
     "react": "latest",
     "react-dom": "latest",
     "react-router": "5.0.0",
-    "react-router-dom": "5.0.0",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "latest",
+    "recharts": "^2.1.8",
+    "swr": "^1.2.1",
     "typescript": "latest",
     "use-eazy-auth": "^2.3.1"
   },
@@ -37,6 +39,10 @@
     ]
   },
   "devDependencies": {
-    "@types/react-router-dom": "^5.3.3"
+    "@types/prop-types": "^15.7.4",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/recharts": "^1.8.23"
   }
 }

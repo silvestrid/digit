@@ -1,10 +1,10 @@
 import * as React from 'react';
 
 import { BrowserRouter as Router, Redirect } from 'react-router-dom';
-import Auth from 'use-eazy-auth';
+import Auth, { useAuthUser, useAuthActions } from 'use-eazy-auth';
 import { AuthRoute, GuestRoute, MaybeAuthRoute } from 'use-eazy-auth/routes';
 
-import Dashboard from './containers/Dashboard';
+import Base from './containers/Base';
 import SignIn from './containers/SignIn';
 
 
@@ -15,7 +15,7 @@ type LoginRequestPayload = {
 
 const loginCall = (payload: LoginRequestPayload) => {
   const { username, password } = payload;
-  return fetch('/api/token/', {
+  return fetch('/api/auth/token/', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
     headers: {
@@ -33,14 +33,14 @@ const loginCall = (payload: LoginRequestPayload) => {
   }));
 }
 
-const meCall = (accessToken: string) => fetch('/api/me/', {
+const meCall = (accessToken: string) => fetch('/api/auth/me/', {
   headers: {
     'Authorization': `Bearer ${accessToken}`
   },
 }).then(response => response.json());
 
 
-const refreshTokenCall = (refreshToken: string) => fetch('/api/token/refresh/', {
+const refreshTokenCall = (refreshToken: string) => fetch('/api/auth/token/refresh/', {
   method: 'POST',
   body: JSON.stringify({ token: refreshToken }),
   headers: {
@@ -53,8 +53,19 @@ const refreshTokenCall = (refreshToken: string) => fetch('/api/token/refresh/', 
   refreshToken: data.refresh,
 }))
 
+function HomePage() {
+  const { user } = useAuthUser();
+  const { logout } = useAuthActions();
+  if (user?.is_active) {
+    return <Redirect to='/site' />;
+  }
+  logout();
+  return <Redirect to='/login' />
+}
+
 
 export default function App() {
+
   return (
     <Auth
       loginCall={loginCall}
@@ -72,16 +83,16 @@ export default function App() {
 
         <AuthRoute
           redirectTo='/login'
-          path='/' exact
+          path='/site'
         >
-          <Dashboard />
+          <Base />
         </AuthRoute>
 
-        <GuestRoute
-          // Authenticated user go to /
-          redirectTo='/'
-          path='/login'
-        >
+        <MaybeAuthRoute path='/' exact>
+          <HomePage />
+        </MaybeAuthRoute>
+
+        <GuestRoute path='/login'>
           <SignIn />
         </GuestRoute>
 

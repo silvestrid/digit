@@ -1,10 +1,31 @@
 from django.contrib import admin
 
-from .models import AbbUserAccount
+from . import models
 
 
-class AbbUserAccountAdmin(admin.ModelAdmin):
+class AccountAdmin(admin.ModelAdmin):
     pass
 
 
-admin.site.register(AbbUserAccount, AbbUserAccountAdmin)
+admin.site.register(models.Account, AccountAdmin)
+
+
+class SiteAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(models.Site, SiteAdmin)
+
+
+class MotionAssetAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(models.MotionAsset, MotionAssetAdmin)
+
+
+class MotionAssetReportAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(models.MotionAssetReport, MotionAssetReportAdmin)
