@@ -24,8 +24,10 @@ type MotionAsset = {
     assetName: string;
     baseAPI: number;
     description: string;
-    siteId: string;
-    siteName: string;
+    site: {
+        siteId: string;
+        siteName: string;
+    },
     organizationName: string;
     assetOwner: string;
     serialNumber: string;
@@ -44,7 +46,7 @@ function AssetCard({ asset }: { asset: MotionAsset }) {
         <Card>
             <CardHeader
                 title={capitalizeFirstLetter(asset.assetName)}
-                subheader={`${asset.siteName} - ${asset.organizationName}`}
+                subheader={`${asset.site.siteName} - ${asset.organizationName}`}
             />
             <CardContent>
                 {/*
@@ -87,9 +89,10 @@ export default function SiteAssetsGrid() {
     }
     const assets = data?.assets;
     if (assets?.length === 0) {
+        setTitle("");
         return <Typography sx={{ mt: 4, ml: 4 }}>Nessun asset per questo sito</Typography>;
     }
-    const siteName = assets[0].siteName;
+    const siteName = assets[0].site.siteName;
     setTitle(siteName);
     return (
         <Grid container spacing={3}>

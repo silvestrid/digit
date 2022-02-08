@@ -13,11 +13,15 @@ class AbbUserAccountSerializer(serializers.ModelSerializer):
 class SiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Site
+        exclude = ("accounts",)
 
 
-class AssetSerializer(DataclassSerializer):
+class AssetSerializer(serializers.ModelSerializer):
+    site = SiteSerializer()
+
     class Meta:
-        dataclass = abb_api.MotionAsset
+        model = models.MotionAsset
+        fields = "__all__"
 
 
 class SubscriptionSerializer(DataclassSerializer):

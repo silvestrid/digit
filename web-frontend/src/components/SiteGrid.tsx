@@ -52,6 +52,17 @@ function SiteCard({ site }: { site: Site }) {
     );
 }
 
+function compare(siteA: Site, siteB: Site) {
+    const a = siteA.siteName.toLowerCase(), b = siteB.siteName.toLowerCase();
+    if (a < b) {
+        return -1;
+    }
+    if (a > b) {
+        return 1;
+    }
+    return 0;
+}
+
 export default function SiteGrid() {
     const { token } = useAuthUser();
     const { title, setTitle } = useContext(TitleContext);
@@ -71,7 +82,7 @@ export default function SiteGrid() {
     setTitle("Siti disponibili")
     return (
         <Grid container spacing={3}>
-            {data.sites.map((site: Site) =>
+            {data.sites.sort(compare).map((site: Site) =>
                 <Grid item xs={12} md={6} key={site.siteId}>
                     <SiteCard site={site} />
                 </Grid>

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -14,39 +14,48 @@ class Account(models.Model):
 
     def is_token_valid(self) -> bool:
         expiration = self.token and self.token_expiration
-        return expiration and expiration > datetime.now()
+        return expiration and expiration > datetime.now(timezone.utc)
 
     def __str__(self) -> str:
         return self.username
 
 
 class Site(models.Model):
-    siteId: models.CharField(max_length=50, primary_key=True)
-    siteName: models.CharField(max_length=100)
-    country: models.CharField(max_length=50, blank=True)
-    countryCode: models.CharField(max_length=10, blank=True)
-    address: models.CharField(max_length=100, blank=True)
-    city: models.CharField(max_length=100, blank=True)
-    latitude: models.FloatField(null=True, blank=True)
-    longitude: models.FloatField(null=True, blank=True)
+    siteId = models.CharField(max_length=50, primary_key=True)
+    siteName = models.CharField(max_length=100)
+    country = models.CharField(max_length=50, blank=True, null=True)
+    countryCode = models.CharField(max_length=10, blank=True, null=True)
+    address = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     accounts = models.ManyToManyField(Account, related_name="sites")
+
+    class Meta:
+        ordering = ["siteName"]
+
+    def __str__(self) -> str:
+        return self.siteName
 
 
 class MotionAsset(models.Model):
-    motionAssetId: models.CharField(max_length=100, primary_key=True)
-    assetId: models.CharField(max_length=50)
-    assetTypeId: models.CharField(max_length=50)
-    assetTypeVersion: models.CharField(max_length=50)
-    assetType: models.CharField(max_length=50)
-    assetFamily: models.CharField(max_length=50)
-    assetName: models.CharField(max_length=100)
-    baseAPI: models.IntegerField()
-    description: models.CharField(max_length=100, blank=True)
-    organizationName: models.CharField(max_length=100, blank=True)
-    assetOwner: models.CharField(max_length=100, blank=True)
-    serialNumber: models.CharField(max_length=100)
-    assetGroupId: models.IntegerField(null=True, blank=True)
-    site: models.ForeignKey(Site, related_name="assets", on_delete=models.CASCADE)
+    motionAssetId = models.CharField(max_length=100, primary_key=True)
+    assetId = models.CharField(max_length=50)
+    assetTypeId = models.CharField(max_length=50, null=True, blank=True)
+    assetTypeVersion = models.CharField(max_length=50, null=True, blank=True)
+    assetType = models.CharField(max_length=50, null=True, blank=True)
+    assetFamily = models.CharField(max_length=50, null=True, blank=True)
+    assetName = models.CharField(max_length=100, null=True, blank=True)
+    baseAPI = models.IntegerField()
+    description = models.CharField(max_length=100, blank=True, null=True)
+    organizationName = models.CharField(max_length=100, blank=True, null=True)
+    assetOwner = models.CharField(max_length=100, blank=True, null=True)
+    serialNumber = models.CharField(max_length=100, blank=True, null=True)
+    assetGroupId = models.IntegerField(null=True, blank=True)
+    site = models.ForeignKey(Site, related_name="assets", on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return f"{self.site.siteName} - {self.assetName}"
 
 
 class MotionAssetReport(models.Model):

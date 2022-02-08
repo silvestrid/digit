@@ -1,4 +1,4 @@
-import requests
+import os
 
 from django.shortcuts import render
 
@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from abb import abb_api as abb, serializers
+
+RELOAD = os.getenv("READ_DATA_FROM_ABB_CLOUD", False)
 
 ABB_APIS = {
     # user: abb_api
@@ -39,7 +41,7 @@ class AssetView(APIView):
             return Response(
                 {"msg": "Invalid ABB user account"}, status=status.HTTP_400_BAD_REQUEST
             )
-        assets = api.get_motionassets(siteId)
+        assets = api.get_motionassets(siteId, force_reload=RELOAD)
         serializer = serializers.AssetsSerializer({"assets": assets})
         return Response(serializer.data)
 
@@ -54,7 +56,7 @@ class SiteView(APIView):
             return Response(
                 {"msg": "Invalid ABB user account"}, status=status.HTTP_400_BAD_REQUEST
             )
-        sites = api.get_sites(force_reload=True)
+        sites = api.get_sites(force_reload=RELOAD)
         serializer = serializers.SitesSerializer({"sites": sites})
         return Response(serializer.data)
 

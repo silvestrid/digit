@@ -35,7 +35,7 @@ export default function AssetData() {
         return <div>Error loading data...</div>
     }
     const { assetName, measurements, report } = data;
-    setTitle(assetName);
+    setTitle(`${assetName}`);
     return (
         <Grid container spacing={3}>
             {/* Chart */}
@@ -52,11 +52,11 @@ export default function AssetData() {
                 </Paper>
             </Grid>
             {/* Recent Deposits */}
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid item xs={12} md={6}>
                 <ReportTable data={report} />
             </Grid>
             {/* Recent Orders */}
-            <Grid item xs={12} md={6} lg={8}>
+            <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
 
                 </Paper>

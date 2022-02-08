@@ -1,10 +1,10 @@
 import logging
 import requests
 
-
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from functools import wraps
 from typing import Optional
@@ -81,26 +81,6 @@ class Subscription:
 
 
 @dataclass
-class MotionAsset:
-    motionAssetId: str
-    assetId: str
-    assetTypeId: str
-    assetTypeVersion: str
-    assetType: str
-    assetFamily: str
-    assetName: str
-    baseAPI: int
-    description: str
-    siteId: str
-    siteName: str
-    organizationName: str
-    assetOwner: str
-    serialNumber: str
-    assetGroupId: int
-    subscription: Optional[Subscription] = None
-
-
-@dataclass
 class MeasurementInfo:
     measurementTypeId: int  # "33",
     measurementTypeName: str  # "Vibration (Axial)",
@@ -162,20 +142,26 @@ class AssetReport:
 def update_token_if_needed(account) -> str:
     """get token from ABB API"""
     if not account.is_token_valid():
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         rsp = get_access_token(account.username, account.password)
         account.token = rsp["accessToken"]
         account.token_expiration = now + timedelta(seconds=rsp["expiration"])
         account.save()
 
 
-def check_access_token(method):
+def token_required(method):
     """ "Decorator needed to automatically update the access token if expired"""
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         update_token_if_needed(self.account)
-        return method(self, *args, **kwargs)
+        try:
+            return method(self, *args, **kwargs)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                update_token_if_needed(self.account)
+                return method(self, *args, **kwargs)
+            raise
 
     return wrapper
 
@@ -184,26 +170,36 @@ class AbbApi:
     def __init__(self, account: models.Account) -> None:
         self.account: models.Account = account
 
-    @check_access_token
+    @token_required
     def get_sites(self, force_reload: bool = False) -> list[models.Site]:
         if force_reload:
             return get_sites(self.account)
-        return models.Site.objects.filter(account=self.account)
+        return models.Site.objects.filter(accounts__in=[self.account]).order_by(
+            "siteName"
+        )
 
+    @token_required
     def get_motionassets(
-        self, siteId: str = None, force_reload: bool = False
-    ) -> list[MotionAsset]:
+        self, siteId: str, force_reload: bool = False
+    ) -> list[models.MotionAsset]:
         """get list of motion assets"""
-        return get_motionassets(self.token, siteId, force_reload)
+        if force_reload:
+            return get_motionassets(self.account, siteId)
+        return models.MotionAsset.objects.filter(site__siteId=siteId)
 
+    @token_required
     def get_subscriptions(self) -> list[Subscription]:
-        return get_all_subscriptions(self.token)
+        return get_all_subscriptions(self.account)
 
+    @token_required
     def get_asset_measurements(self, assetId: str) -> AssetMeasurements:
-        return get_asset_measurements(self.token, assetId)
+        return get_asset_measurements(self.account, assetId)
 
+    @token_required
     def get_asset_report(self, assetId: str) -> AssetReport:
-        orig_data = get_asset_measurements(self.token, assetId)
+        orig_data = get_asset_measurements(self.account, assetId)
+        if not orig_data.measurements:
+            raise ValueError("No measurements found")
         report_data = elaborate_report_data(orig_data)
         return report_data
 
@@ -232,11 +228,11 @@ def get_access_token(username: str, password: str) -> dict:
 
 
 def get_motionassets(
-    token: str,
+    account: models.Account,
     siteId: str = None,
     baseApi: int = 1,
     assetTypeId: int = MotionAssetTypeId.MOTIONASSET.value,
-) -> list[MotionAsset]:
+) -> list[models.MotionAsset]:
     """
     Get the list of installed base data for the given assetType and assigned
     to the organization of the authenticated user.
@@ -292,25 +288,31 @@ def get_motionassets(
       ...,
       ]
     """
+    headers = {"Authorization": f"Bearer {account.token}", **HEADERS}
     if siteId:
         rsp = requests.get(
             f"{API_URL}/InstalledBase/Site/{baseApi}/{siteId}",
-            headers={"Authorization": f"Bearer {token}", **HEADERS},
+            headers=headers,
         )
     else:
         rsp = requests.get(
             f"{API_URL}/InstalledBase/Type/{assetTypeId}",
-            headers={"Authorization": f"Bearer {token}", **HEADERS},
+            headers=headers,
         )
     rsp.raise_for_status()
-    assets = rsp.json().get("payload", [])
-    return sorted(
-        [MotionAsset(**asset["baseInfo"]) for asset in assets],
-        key=lambda asset: asset.assetName,
-    )
+    data = rsp.json().get("payload", [])
+    assets = []
+    for raw_asset in data:
+        info = copy(raw_asset["baseInfo"])
+        site, _ = models.Site.objects.get_or_create(
+            siteId=info.pop("siteId"), siteName=info.pop("siteName")
+        )
+        asset, _ = models.MotionAsset.objects.update_or_create(site=site, **info)
+        assets.append(asset)
+    return assets
 
 
-def get_all_subscriptions(token: str) -> list[Subscription]:
+def get_all_subscriptions(account: models.Account) -> list[Subscription]:
     """
     return list of subscriptions
     {
@@ -335,7 +337,7 @@ def get_all_subscriptions(token: str) -> list[Subscription]:
     """
     rsp = requests.get(
         f"{API_URL}/Subscription/All",
-        headers={"Authorization": f"Bearer {token}", **HEADERS},
+        headers={"Authorization": f"Bearer {account.token}", **HEADERS},
     )
     rsp.raise_for_status()
     subscriptions = rsp.json().get("payload", [])
@@ -366,13 +368,17 @@ def get_sites(account: models.Account) -> list[models.Site]:
     data = rsp.json().get("payload", [])
     sites = []
     for raw_site in data:
-        site, _ = models.Site.update_or_create(account=account, **raw_site)
+        site, _ = models.Site.objects.update_or_create(**raw_site)
+        site.accounts.add(account)
         sites.append(site)
-    return
+    return sites
 
 
 def get_asset_measurements(
-    token: str, assetId: str, from_date: datetime = None, to_date: datetime = None
+    account: models.Account,
+    assetId: str,
+    from_date: datetime = None,
+    to_date: datetime = None,
 ) -> AssetMeasurements:
     """
     get measurement saved from the motionasset.
@@ -420,7 +426,7 @@ def get_asset_measurements(
     # get data
     rsp = requests.get(
         f"{API_URL}/Measurement",
-        headers={"Authorization": f"Bearer {token}", **HEADERS},
+        headers={"Authorization": f"Bearer {account.token}", **HEADERS},
         params={
             "motionAssetId": assetId,
             "measurementTypeIds": ",".join(map(str, MEASUREMENT_TYPES.values())),
