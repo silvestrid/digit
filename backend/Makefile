@@ -1,9 +1,9 @@
 install-dependencies:
 	apt-get update && apt-get install -y libpq-dev postgresql-client
-	pip install -r requirements/base.txt
+	pip install -r requirements.txt
 
 install-dev-dependencies:
-	pip install -r requirements/dev.txt
+	pip install -r requirements-dev.txt
 
 lint:
 	flake8 src tests && black . --extend-exclude='/(generated|migrations)/' --check || exit;

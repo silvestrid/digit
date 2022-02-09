@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:impish
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -7,7 +7,7 @@ RUN apt-get update && \
     curl sudo gnupg2 nano
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - \
-    && curl -sL https://deb.nodesource.com/setup_12.x  | bash -
+    && curl -sL https://deb.nodesource.com/setup_16.x  | bash -
 
 RUN apt-get update && \
     apt install -y \
@@ -19,7 +19,7 @@ RUN apt-get update && \
 
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt install -y nodejs
-RUN npm install --global yarn mjml
+RUN npm install --global yarn
 
 RUN mkdir -p /digit /run/temp/update-check
 WORKDIR /digit
@@ -28,10 +28,10 @@ RUN service supervisor stop && service nginx stop
 RUN rm -f /etc/nginx/sites-enabled/*
 
 ADD . /digit/digit
+ADD backend/poetry.lock backend/pyproject.toml /digit/
 RUN virtualenv -p python3 env
-RUN env/bin/pip install --no-cache -r digit/backend/requirements/base.txt
-RUN env/bin/pip install dj-database-url boto3==1.16.25 django-storages==1.10.1
-RUN (cd digit/web-frontend && yarn install && yarn build)
+RUN env/bin/pip install poetry && env/bin/poetry install --no-dev && env/bin/poetry add dj-database-url boto3==1.16.25 django-storages==1.10.1
+RUN (cd digit/web-frontend && yarn install && npm run build)
 
 RUN (mkdir -p /digit/heroku/heroku && \
     mkdir /digit/media && \

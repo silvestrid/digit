@@ -16,6 +16,7 @@
     "react-router-dom": "^5.1.2",
     "react-scripts": "latest",
     "recharts": "^2.1.8",
+    "serve": "^13.0.2",
     "swr": "^1.2.1",
     "typescript": "latest",
     "use-eazy-auth": "^2.3.1"
