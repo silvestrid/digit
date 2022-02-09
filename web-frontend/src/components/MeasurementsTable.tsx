@@ -123,7 +123,7 @@ export default function CustomizedTables(props: any) {
                         <StyledTableCell align="right">0</StyledTableCell>
                         <StyledTableCell align="right">1.8</StyledTableCell>
                     </StyledTableRow>
-                    <StyledTableRow key={100}>
+                    <StyledTableRow key={101}>
                         <StyledTableCell component="th" scope="row">
 
                         </StyledTableCell>
@@ -139,7 +139,7 @@ export default function CustomizedTables(props: any) {
                         <StyledTableCell align="right">0</StyledTableCell>
                         <StyledTableCell align="right">1.8</StyledTableCell>
                     </StyledTableRow>
-                    <StyledTableRow key={5}>
+                    <StyledTableRow key={6}>
                         <StyledTableCell component="th" scope="row">
                             {'DVI'}
                         </StyledTableCell>

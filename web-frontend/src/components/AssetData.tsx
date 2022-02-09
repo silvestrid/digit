@@ -34,8 +34,9 @@ export default function AssetData() {
         setTitle("Errore");
         return <div>Error loading data...</div>
     }
-    const { assetName, measurements, report } = data;
-    setTitle(`${assetName}`);
+    const { asset, measurements, report } = data,
+        { assetName, site } = asset;
+    setTitle(`${site.siteName} - ${assetName}`);
     return (
         <Grid container spacing={3}>
             {/* Chart */}

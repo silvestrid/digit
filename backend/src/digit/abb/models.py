@@ -46,13 +46,15 @@ class MotionAsset(models.Model):
     assetType = models.CharField(max_length=50, null=True, blank=True)
     assetFamily = models.CharField(max_length=50, null=True, blank=True)
     assetName = models.CharField(max_length=100, null=True, blank=True)
-    baseAPI = models.IntegerField()
+    baseAPI = models.IntegerField(null=True, blank=True)
     description = models.CharField(max_length=100, blank=True, null=True)
     organizationName = models.CharField(max_length=100, blank=True, null=True)
     assetOwner = models.CharField(max_length=100, blank=True, null=True)
     serialNumber = models.CharField(max_length=100, blank=True, null=True)
     assetGroupId = models.IntegerField(null=True, blank=True)
-    site = models.ForeignKey(Site, related_name="assets", on_delete=models.CASCADE)
+    site = models.ForeignKey(
+        Site, related_name="assets", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     def __str__(self) -> str:
         return f"{self.site.siteName} - {self.assetName}"

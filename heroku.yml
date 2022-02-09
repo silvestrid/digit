@@ -1,0 +1,9 @@
+build:
+  docker:
+    web: heroku.Dockerfile
+release:
+  image: web
+  command:
+    - /digit/env/bin/python /digit/digit/backend/src/digit/manage.py migrate --settings=heroku.settings
+run:
+  web: . /digit/entry.sh && /usr/bin/supervisord --configuration /etc/supervisor/conf.d/supervisor.conf

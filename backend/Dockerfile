@@ -1,0 +1,52 @@
+FROM python:3.9-slim-buster
+
+ARG UID
+ENV UID=${UID:-9999}
+ARG GID
+ENV GID=${GID:-9999}
+
+# We might be running as a user which already exists in this image. In that situation
+# Everything is OK and we should just continue on.
+RUN groupadd -g $GID digit_docker_group || exit 0
+RUN useradd --shell /bin/bash -u $UID -g $GID -o -c "" -m digit_docker_user || exit 0
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    gnupg2 \
+    libpq-dev \
+    dos2unix \
+    tini \
+    postgresql-client \
+    && apt-get autoclean \
+    && apt-get clean \
+    && apt-get autoremove \
+    && rm -rf /var/lib/apt/lists/*
+
+USER $UID:$GID
+
+COPY --chown=$UID:$GID ./backend/requirements.txt /digit/requirements.txt
+# In slim docker images, mime.types is removed and we need it for mimetypes guessing
+COPY --chown=$UID:$GID ./backend/docker/mime.types /etc/
+# Disable the path warn as we set the correct path in the entrypoint when it is easy
+# to know the users $HOME/.local/bin location. Changing path in the docker image does
+# not work as we do not know where $HOME when using an ENV command.
+RUN pip3 install --no-warn-script-location -r /digit/requirements.txt
+
+COPY --chown=$UID:$GID ./docs /digit/docs
+COPY --chown=$UID:$GID ./backend /digit/backend
+
+WORKDIR /digit/backend
+
+# Ensure that Python outputs everything that's printed inside
+# the application rather than buffering it.
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH $PYTHONPATH:/digit/backend/src
+ENV DJANGO_SETTINGS_MODULE='digit.config.settings.base'
+
+RUN dos2unix /digit/backend/docker/docker-entrypoint.sh && \
+    chmod a+x /digit/backend/docker/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/bin/bash", "/digit/backend/docker/docker-entrypoint.sh"]
+CMD ["local"]

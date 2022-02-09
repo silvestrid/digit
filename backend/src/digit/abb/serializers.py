@@ -35,6 +35,8 @@ class AssetMeasurementsSerializer(DataclassSerializer):
 
 
 class AssetReportSerializer(DataclassSerializer):
+    asset = AssetSerializer()
+
     class Meta:
         dataclass = abb_api.AssetReport
 

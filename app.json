@@ -1,0 +1,38 @@
+{
+  "name": "digit",
+  "description": "",
+  "repository": "https://github.com/silvestrid/digit",
+  "keywords": [
+    "digit",
+    "no-code",
+    "database"
+  ],
+  "logo": "",
+  "success_url": "/",
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "stack": "container",
+  "env": {
+    "SECRET_KEY": {
+      "description": "A unique string that is used to generate secrets.",
+      "generator": "secret"
+    },
+    "DIGIT_PUBLIC_URL": {
+      "description": "The public URL of your Heroku digit app. Don't forget to replace YOUR_APP_NAME with the name of your app.",
+      "value": "https://piccolisdigit.herokuapp.com",
+      "required": true
+    },
+    "DIGIT_AMOUNT_OF_WORKERS": {
+      "description": "The amount of workers per dyno. This value must be `1` if you want to run the free plan.",
+      "value": "1",
+      "required": true
+    }
+  }
+}

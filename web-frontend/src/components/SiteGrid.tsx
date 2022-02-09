@@ -82,7 +82,7 @@ export default function SiteGrid() {
     setTitle("Siti disponibili")
     return (
         <Grid container spacing={3}>
-            {data.sites.sort(compare).map((site: Site) =>
+            {data.sites?.sort(compare).map((site: Site) =>
                 <Grid item xs={12} md={6} key={site.siteId}>
                     <SiteCard site={site} />
                 </Grid>

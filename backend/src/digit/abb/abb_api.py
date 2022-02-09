@@ -131,8 +131,7 @@ class ReportData:
 
 @dataclass
 class AssetReport:
-    assetId: str
-    assetName: str
+    asset: models.MotionAsset
     start_date: str
     end_date: str
     measurements: list[CombinedPoint]
@@ -497,6 +496,8 @@ def elaborate_report_data(data: AssetMeasurements) -> ReportData:
     report_vals = ReportData(
         max_tot_time, tot_run_time, avg_acc_x, avg_acc_y, avg_acc_z, tvi, dvi
     )
-    return AssetReport(
-        data.assetId, data.assetName, start_date, end_date, resdata, report_vals
+    asset, _ = models.MotionAsset.objects.get_or_create(
+        assetId=data.assetId,
+        assetName=data.assetName,
     )
+    return AssetReport(asset, start_date, end_date, resdata, report_vals)
